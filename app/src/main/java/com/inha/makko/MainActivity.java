@@ -1,116 +1,107 @@
 package com.inha.makko;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatImageButton;
-
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.content.pm.Signature;
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Base64;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Toast;
+import android.view.Menu;
+import android.view.MenuItem;
 
-import com.gun0912.tedpermission.PermissionListener;
-import com.gun0912.tedpermission.TedPermission;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
-import net.daum.mf.map.api.MapPoint;
-import net.daum.mf.map.api.MapView;
-
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.viewpager.widget.ViewPager;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, MapView.CurrentLocationEventListener  {
-    AppCompatImageButton currentMyLocButton;
-    MapView mapView;
+public class MainActivity extends AppCompatActivity {
+
+    private String[] tabTitleList = {"지도", "친구"};
+    private TabLayout mainTabLayout;
+    private ViewPager mainViewPager;
+    GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mapView = findViewById(R.id.map_view);
-        mapView.setCurrentLocationEventListener(this);
-
-        currentMyLocButton = findViewById(R.id.current_my_location);
-        currentMyLocButton.setOnClickListener(this);
-    }
-
-    public static String getSigneture(Context context){
-        PackageManager pm = context.getPackageManager();
-        try{
-            PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
-
-            for(int i = 0; i < packageInfo.signatures.length; i++){
-                Signature signature = packageInfo.signatures[i];
-                try {
-                    MessageDigest md = MessageDigest.getInstance("SHA");
-                    md.update(signature.toByteArray());
-                    return Base64.encodeToString(md.digest(), Base64.NO_WRAP);
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-        }catch(PackageManager.NameNotFoundException e){
-            e.printStackTrace();
+        mainTabLayout = findViewById(R.id.tab_layout_main);
+        mainViewPager = findViewById(R.id.viewpager_main);
+        if (mainTabLayout.getTabCount() == 0) {
+            initTabLayout();
+            initViewPager();
         }
-        return null;
+
+        /* Google Sign in Configuration */
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
     }
 
-    @Override
-    public void onClick(View view) {
-        if (view.getId() == R.id.current_my_location) {
-            clickCurrentMyLocButton();
+    private void initTabLayout() {
+        for (String s : tabTitleList) {
+            TabLayout.Tab tab = mainTabLayout.newTab().setText(s);
+            mainTabLayout.addTab(tab);
         }
-    }
 
-    private void clickCurrentMyLocButton() {
-        PermissionListener permissionListener = new PermissionListener() {
+        mainTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
-            public void onPermissionGranted() {
-                mapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithoutHeading);
+            public void onTabSelected(TabLayout.Tab tab) {
+                mainViewPager.setCurrentItem(tab.getPosition());
             }
 
             @Override
-            public void onPermissionDenied(List<String> deniedPermissions) {
-                Toast.makeText(MainActivity.this, "위치 권한 승인 실패", Toast.LENGTH_SHORT).show();
+            public void onTabUnselected(TabLayout.Tab tab) {
+
             }
-        };
 
-        TedPermission.with(this)
-                .setPermissionListener(permissionListener)
-                .setDeniedTitle("위치 접근 권한 필요")
-                .setDeniedMessage("현재 위치를 확인하려면, 위치 접근 권한이 필요합니다.")
-                .setPermissions(Manifest.permission.ACCESS_FINE_LOCATION)
-                .check();
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
+    }
+
+    private void initViewPager() {
+        MainViewPagerAdapter adapter = new MainViewPagerAdapter(getSupportFragmentManager(), mainTabLayout.getTabCount());
+        mainViewPager.setAdapter(adapter);
+        mainViewPager.setOffscreenPageLimit(mainTabLayout.getTabCount());
+        mainViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mainTabLayout));
     }
 
     @Override
-    public void onCurrentLocationUpdate(MapView mapView, MapPoint mapPoint, float accuracyInMeters) {
-        MapPoint.GeoCoordinate mapPointGeo = mapPoint.getMapPointGeoCoord();
-        Log.i("info", String.format("MapView onCurrentLocationUpdate (%f,%f) accuracy (%f)", mapPointGeo.latitude, mapPointGeo.longitude, accuracyInMeters));
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
     }
 
     @Override
-    public void onCurrentLocationDeviceHeadingUpdate(MapView mapView, float v) {
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        if (item.getItemId() == R.id.item_menu_logout) {
+            // FireBase auth signOut
+            FirebaseAuth.getInstance().signOut();
+            // Google SignOut
+            mGoogleSignInClient.signOut().addOnCompleteListener(this,
+                    new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            Intent intent = new Intent(MainActivity.this, AuthActivity.class);
+                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        }
+                    });
+            return true;
+        }
 
-    }
-
-    @Override
-    public void onCurrentLocationUpdateFailed(MapView mapView) {
-
-    }
-
-    @Override
-    public void onCurrentLocationUpdateCancelled(MapView mapView) {
-
+        return super.onOptionsItemSelected(item);
     }
 }

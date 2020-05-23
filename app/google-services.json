@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "827944493645",
+    "firebase_url": "https://makko-4db64.firebaseio.com",
+    "project_id": "makko-4db64",
+    "storage_bucket": "makko-4db64.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:827944493645:android:6c05c97cecf61c4f8bf204",
+        "android_client_info": {
+          "package_name": "com.inha.makko"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "827944493645-l1lceg2173ohj7scjc883ftmvr0kqnnd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYvUkznA5kOiQ3TI2AHoFD98JubeOi6BU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "827944493645-l1lceg2173ohj7scjc883ftmvr0kqnnd.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
