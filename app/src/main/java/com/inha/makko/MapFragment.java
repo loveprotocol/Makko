@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
 
@@ -35,6 +36,7 @@ import net.daum.mf.map.api.MapView;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,7 @@ import java.util.Map;
  */
 public class MapFragment extends Fragment implements View.OnClickListener, MapView.CurrentLocationEventListener{
     private AppCompatImageButton currentMyLocButton;
+    private AppCompatImageButton showFriendButton;
     private MapView mapView;
     private MapPOIItem mDefaultMarker;
 
@@ -97,6 +100,8 @@ public class MapFragment extends Fragment implements View.OnClickListener, MapVi
 
         currentMyLocButton = view.findViewById(R.id.current_my_location);
         currentMyLocButton.setOnClickListener(this);
+        showFriendButton = view.findViewById(R.id.show_friend);
+        showFriendButton.setOnClickListener(this);
     }
 
     private void getMyCurrentLocation() {
@@ -177,7 +182,28 @@ public class MapFragment extends Fragment implements View.OnClickListener, MapVi
     public void onClick(View view) {
         if (view.getId() == R.id.current_my_location) {
             clickCurrentMyLocButton();
+        } else if (view.getId() == R.id.show_friend) {
+            clickShowFriendButton();
         }
+    }
+
+    private void clickShowFriendButton() {
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .get()
+                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
+                    @Override
+                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                        ArrayList<User> userArrayList = (ArrayList<User>)queryDocumentSnapshots.toObjects(User.class);
+                        userArrayList.size();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+
+                    }
+                });
     }
 
     private void clickCurrentMyLocButton() {
