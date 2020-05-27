@@ -169,6 +169,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
     }
 
     private void setOffCurrentLocation() {
+        mapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOff);
     }
 
     private void clickShowFriendButton() {
@@ -180,6 +181,8 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
                         ArrayList<User> userArrayList = (ArrayList<User>)queryDocumentSnapshots.toObjects(User.class);
                         showFriendsLocation(userArrayList);
+                        currentMyLocButton.setChecked(false);
+
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
@@ -223,6 +226,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         mapView.setCustomCurrentLocationMarkerDirectionImage(R.drawable.custom_map_present_direction, directionImageAnchorPointOffset);
         mapView.setCustomCurrentLocationMarkerImage(R.drawable.custom_map_present, offImageAnchorPointOffset);
         mapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOnWithHeading);
+        mapView.setZoomLevel(1, true);
     }
 
     private void requestLocationPermission() {
@@ -290,7 +294,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         float maxZoomLevel = 10;
 
         MapPoint myMapPoint = MapPoint.mapPointWithGeoCoord(myInfo.latitude, myInfo.longitude);
-        mapView.setMapCenterPoint(myMapPoint, false);
+        //mapView.setMapCenterPoint(myMapPoint, false);
 
         MapPoint[] friendPointArray = new MapPoint[friendPointList.size()];
         friendPointList.toArray(friendPointArray);
