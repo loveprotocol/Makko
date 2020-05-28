@@ -13,6 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatImageButton;
 import androidx.fragment.app.Fragment;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import android.util.Base64;
 import android.util.Log;
@@ -29,14 +34,21 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
+import com.inha.makko.model.KakaoCoord2AddressResponse;
 
 import net.daum.mf.map.api.CameraUpdateFactory;
 import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPointBounds;
+import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
+
+import org.json.JSONArray;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -52,11 +64,14 @@ import java.util.PriorityQueue;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements View.OnClickListener, ToggleButton.OnCheckedChangeListener , MapView.CurrentLocationEventListener, MapView.POIItemEventListener{
+public class MapFragment extends Fragment implements View.OnClickListener, ToggleButton.OnCheckedChangeListener, MapView.CurrentLocationEventListener, MapView.POIItemEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener {
     private ToggleButton currentMyLocButton;
     private AppCompatImageButton showFriendButton;
     private MapView mapView;
     private MapPOIItem mDefaultMarker;
+    private Retrofit retrofit;
+    private KaKaoLocalAPI kaKaoLocalAPI;
+    private Call<KakaoCoord2AddressResponse> callAddress;
 
     private static final MapPoint DEFAULT_MARKER_POINT = MapPoint.mapPointWithGeoCoord(37.4020737, 127.1086766);
     private ArrayList<MapPoint> friendPointList = new ArrayList<>();
@@ -81,6 +96,38 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        initRetrofit();
+    }
+
+    private void initRetrofit() {
+        retrofit = new Retrofit.Builder()
+                .baseUrl(getString(R.string.kakao_local_api_base_url))
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        kaKaoLocalAPI = retrofit.create(KaKaoLocalAPI.class);
+    }
+
+    private void callCoord2Address(Double x, Double y) {
+//        Map<String, Double> coord = new HashMap<>();
+//        coord.put("x", x);
+//        coord.put("y", y);
+     //   callAddress = kaKaoLocalAPI.coord2address(127.423084873712, 37.0789561558879);
+        callAddress = kaKaoLocalAPI.coord2address(x, y);
+        callAddress.enqueue(new Callback<KakaoCoord2AddressResponse>() {
+            @Override
+            public void onResponse(Call<KakaoCoord2AddressResponse> call, Response<KakaoCoord2AddressResponse> response) {
+                KakaoCoord2AddressResponse result = response.body();
+                if (result != null) {
+                    result.getDocuments();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<KakaoCoord2AddressResponse> call, Throwable t) {
+                Toast.makeText(getActivity(), t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override
@@ -105,7 +152,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             requestLocationPermission();    // 위치 권한 얻기
         }
 
-       // createDefaultMarker(mapView);
+        // createDefaultMarker(mapView);
 
         currentMyLocButton = view.findViewById(R.id.current_my_location);
         currentMyLocButton.setOnCheckedChangeListener(this);
@@ -138,6 +185,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         MapPoint.GeoCoordinate mapPointGeo = mapPoint.getMapPointGeoCoord();
         Log.i("info", String.format("MapView onCurrentLocationUpdate (%f,%f) accuracy (%f)", mapPointGeo.latitude, mapPointGeo.longitude, accuracyInMeters));
         updateMyLocationInfo(mapPointGeo, accuracyInMeters);
+        callCoord2Address(mapPointGeo.longitude, mapPointGeo.latitude);
     }
 
     @Override
@@ -156,6 +204,31 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         if (view.getId() == R.id.show_friend) {
             clickShowFriendButton();
         }
+    }
+
+    @Override
+    public void onReverseGeoCoderFoundAddress(MapReverseGeoCoder mapReverseGeoCoder, String s) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            Map<String, Object> mapPoint = new HashMap<>();
+            mapPoint.put("roadNameAddress", s);
+
+            FirebaseFirestore.getInstance().collection("users")
+                    .document(currentUser.getUid())
+                    .update(mapPoint)
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(getActivity(), "현재 위치 도로명 주소 업데이트 실패", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+        }
+    }
+
+    @Override
+    public void onReverseGeoCoderFailedToFindAddress(MapReverseGeoCoder mapReverseGeoCoder) {
+
     }
 
     private void setOnCurrentLocation() {
@@ -179,7 +252,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        ArrayList<User> userArrayList = (ArrayList<User>)queryDocumentSnapshots.toObjects(User.class);
+                        ArrayList<User> userArrayList = (ArrayList<User>) queryDocumentSnapshots.toObjects(User.class);
                         showFriendsLocation(userArrayList);
                         currentMyLocButton.setChecked(false);
 
@@ -194,6 +267,9 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
     }
 
     private void updateMyLocationInfo(MapPoint.GeoCoordinate mapPointGeo, float accuracyInMeters) {
+
+
+
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             Map<String, Object> mapPoint = new HashMap<>();
@@ -303,13 +379,12 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
     }
 
 
-
-    private static String getSigneture(Context context){
+    private static String getSigneture(Context context) {
         PackageManager pm = context.getPackageManager();
-        try{
+        try {
             PackageInfo packageInfo = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES);
 
-            for(int i = 0; i < packageInfo.signatures.length; i++){
+            for (int i = 0; i < packageInfo.signatures.length; i++) {
                 Signature signature = packageInfo.signatures[i];
                 try {
                     MessageDigest md = MessageDigest.getInstance("SHA");
@@ -321,7 +396,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
 
             }
 
-        }catch(PackageManager.NameNotFoundException e){
+        } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
         return null;

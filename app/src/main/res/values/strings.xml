@@ -3,4 +3,7 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="kakao_map_app_api_key">9b5a0652ed42ac6c0487ef7d08a91028</string>
+    <string name="kakao_map_rest_api_key">4ca0af2308d4ad179f7c56a846a6211e</string>
+    <string name="kakao_local_api_base_url">https://dapi.kakao.com</string>
 </resources>
