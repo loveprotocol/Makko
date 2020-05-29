@@ -1,20 +1,35 @@
 package com.inha.makko;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import net.daum.mf.map.api.MapPOIItem;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager.widget.ViewPager;
 
@@ -100,8 +115,88 @@ public class MainActivity extends AppCompatActivity {
                         }
                     });
             return true;
+        } else if (item.getItemId() == R.id.item_menu_rename) {
+            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+            if (user != null) {
+
+                FirebaseFirestore.getInstance().collection("users")
+                        .document(user.getUid())
+                        .get()
+                        .addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+                            @Override
+                            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                                User user = documentSnapshot.toObject(User.class);
+                                showRenameDialog(user);
+                            }
+                        });
+            }
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showRenameDialog(User user) {
+
+        AlertDialog renameDialog = new AlertDialog.Builder(this)
+                .setView(R.layout.partial_edittext_in_dialog)
+                .setTitle("이름 변경")
+                .setPositiveButton("변경", null)
+                .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                .create();
+
+        renameDialog.setOnShowListener(dialog -> {
+            ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> rename(dialog, user));
+        });
+
+        renameDialog.show();
+
+        EditText editText = renameDialog.findViewById(R.id.partial_edit_text);
+        if (editText != null) {
+            editText.setText(user.name);
+            editText.setSelection(editText.length());
+            editText.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    editText.selectAll();
+                }
+            });
+        }
+    }
+
+    private void rename(DialogInterface dialog, User user) {
+        EditText editText = ((AlertDialog)dialog).findViewById(R.id.partial_edit_text);
+        if (editText != null) {
+            if (editText.getText() == null || editText.getText().toString().equals("")) {
+                Toast.makeText(this, "변경할 이름을 입력하세요", Toast.LENGTH_SHORT).show();
+            } else {
+                ProgressBar loadingBar = ((AlertDialog)dialog).findViewById(R.id.partial_progress_bar);
+                if (loadingBar != null) {
+                    loadingBar.setVisibility(View.VISIBLE);
+                }
+
+                String newName = editText.getText().toString();
+                Map<String, Object> newNameMap = new HashMap<>();
+                newNameMap.put("name", newName);
+
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(user.uid)
+                        .update(newNameMap)
+                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Toast.makeText(MainActivity.this, "변경 성공", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        })
+                        .addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(MainActivity.this, "변경 실패", Toast.LENGTH_SHORT).show();
+                                dialog.dismiss();
+                            }
+                        });
+            }
+        }
     }
 }

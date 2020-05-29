@@ -9,17 +9,32 @@
     <net.daum.mf.map.api.MapView
         android:id="@+id/map_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        tools:layout_editor_absoluteX="0dp"
+        tools:layout_editor_absoluteY="0dp" />
 
-    <androidx.appcompat.widget.AppCompatImageButton
-        android:id="@+id/show_friend"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <ToggleButton
+        android:id="@+id/friend_location_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="48dp"
         android:layout_marginEnd="24dp"
-        android:background="@drawable/ic_man_pin" />
+        android:checked="false"
+        android:background="@drawable/ic_friend_location_selector"
+        android:textColor="@android:color/transparent" />
+
+    <androidx.appcompat.widget.AppCompatImageButton
+        android:id="@+id/friend_search_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:layout_constraintTop_toBottomOf="@id/friend_location_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="24dp"
+        android:visibility="invisible"
+        android:background="@drawable/ic_friend_search" />
 
     <ToggleButton
         android:id="@+id/current_my_location"

@@ -8,13 +8,13 @@ public class Meta {
 
     @SerializedName("total_count")
     @Expose
-    private String totalCount;
+    private Integer totalCount;
 
-    public String getTotalCount() {
+    public Integer getTotalCount() {
         return totalCount;
     }
 
-    public void setTotalCount(String totalCount) {
+    public void setTotalCount(Integer totalCount) {
         this.totalCount = totalCount;
     }
 

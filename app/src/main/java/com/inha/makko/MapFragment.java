@@ -3,28 +3,19 @@ package com.inha.makko;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.graphics.Color;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.widget.AppCompatImageButton;
-import androidx.fragment.app.Fragment;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
-
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -34,21 +25,17 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
 import com.gun0912.tedpermission.PermissionListener;
 import com.gun0912.tedpermission.TedPermission;
+import com.inha.makko.model.Address;
 import com.inha.makko.model.KakaoCoord2AddressResponse;
+import com.inha.makko.model.RoadAddress;
 
 import net.daum.mf.map.api.CameraUpdateFactory;
 import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPointBounds;
-import net.daum.mf.map.api.MapReverseGeoCoder;
 import net.daum.mf.map.api.MapView;
-
-import org.json.JSONArray;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,7 +43,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.AppCompatImageButton;
+import androidx.fragment.app.Fragment;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 
 /**
@@ -64,19 +61,17 @@ import java.util.PriorityQueue;
  * Use the {@link MapFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class MapFragment extends Fragment implements View.OnClickListener, ToggleButton.OnCheckedChangeListener, MapView.CurrentLocationEventListener, MapView.POIItemEventListener, MapReverseGeoCoder.ReverseGeoCodingResultListener {
+public class MapFragment extends Fragment implements View.OnClickListener, ToggleButton.OnCheckedChangeListener, MapView.CurrentLocationEventListener, MapView.POIItemEventListener {
     private ToggleButton currentMyLocButton;
-    private AppCompatImageButton showFriendButton;
+    private ToggleButton friendLocButton;
+    private AppCompatImageButton friendSearchButton;
     private MapView mapView;
-    private MapPOIItem mDefaultMarker;
-    private Retrofit retrofit;
     private KaKaoLocalAPI kaKaoLocalAPI;
     private Call<KakaoCoord2AddressResponse> callAddress;
 
-    private static final MapPoint DEFAULT_MARKER_POINT = MapPoint.mapPointWithGeoCoord(37.4020737, 127.1086766);
-    private ArrayList<MapPoint> friendPointList = new ArrayList<>();
     private String myUid;
     private User myInfo;
+    private ArrayList<MapPoint> friendPointList = new ArrayList<>();
 
     public MapFragment() {
         // Required empty public constructor
@@ -97,37 +92,6 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initRetrofit();
-    }
-
-    private void initRetrofit() {
-        retrofit = new Retrofit.Builder()
-                .baseUrl(getString(R.string.kakao_local_api_base_url))
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-
-        kaKaoLocalAPI = retrofit.create(KaKaoLocalAPI.class);
-    }
-
-    private void callCoord2Address(Double x, Double y) {
-//        Map<String, Double> coord = new HashMap<>();
-//        coord.put("x", x);
-//        coord.put("y", y);
-     //   callAddress = kaKaoLocalAPI.coord2address(127.423084873712, 37.0789561558879);
-        callAddress = kaKaoLocalAPI.coord2address(x, y);
-        callAddress.enqueue(new Callback<KakaoCoord2AddressResponse>() {
-            @Override
-            public void onResponse(Call<KakaoCoord2AddressResponse> call, Response<KakaoCoord2AddressResponse> response) {
-                KakaoCoord2AddressResponse result = response.body();
-                if (result != null) {
-                    result.getDocuments();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<KakaoCoord2AddressResponse> call, Throwable t) {
-                Toast.makeText(getActivity(), t.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
     }
 
     @Override
@@ -152,12 +116,12 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             requestLocationPermission();    // 위치 권한 얻기
         }
 
-        // createDefaultMarker(mapView);
-
         currentMyLocButton = view.findViewById(R.id.current_my_location);
         currentMyLocButton.setOnCheckedChangeListener(this);
-        showFriendButton = view.findViewById(R.id.show_friend);
-        showFriendButton.setOnClickListener(this);
+        friendLocButton= view.findViewById(R.id.friend_location_button);
+        friendLocButton.setOnCheckedChangeListener(this);
+        friendSearchButton = view.findViewById(R.id.friend_search_button);
+        friendSearchButton.setOnClickListener(this);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
@@ -180,12 +144,78 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
 
     }
 
+    /**
+     * 현재 위치가 업데이트되면 호출되는 함수
+     * MapView.CurrentLocationEventListener
+     *
+     * @param mapView          현재 지도를 그리고 있는 View
+     * @param mapPoint         현재 좌표
+     * @param accuracyInMeters 위치 정확도
+     */
     @Override
     public void onCurrentLocationUpdate(MapView mapView, MapPoint mapPoint, float accuracyInMeters) {
         MapPoint.GeoCoordinate mapPointGeo = mapPoint.getMapPointGeoCoord();
         Log.i("info", String.format("MapView onCurrentLocationUpdate (%f,%f) accuracy (%f)", mapPointGeo.latitude, mapPointGeo.longitude, accuracyInMeters));
         updateMyLocationInfo(mapPointGeo, accuracyInMeters);
         callCoord2Address(mapPointGeo.longitude, mapPointGeo.latitude);
+    }
+
+    /**
+     * 특정 마커가 선택되었을 때 호출되는 함수
+     * MapView.POIItemEventListener
+     *
+     * @param mapView    현재 지도를 그리고 있는 View
+     * @param mapPOIItem 선택된 마커
+     */
+    @Override
+    public void onPOIItemSelected(MapView mapView, MapPOIItem mapPOIItem) {
+        focusOnTarget(mapPOIItem);
+    }
+
+    @Override
+    public void onCalloutBalloonOfPOIItemTouched(MapView mapView, MapPOIItem mapPOIItem) {
+
+    }
+
+    @Override
+    public void onCalloutBalloonOfPOIItemTouched(MapView mapView, MapPOIItem mapPOIItem, MapPOIItem.CalloutBalloonButtonType calloutBalloonButtonType) {
+        User selectedUser = (User) mapPOIItem.getUserObject();
+        String message;
+        String addressToShow;
+
+        // 도로명 주소 우선
+        if (selectedUser.roadAddress != null) {
+            addressToShow = selectedUser.roadAddress;
+            message = addressToShow;
+        } else if (selectedUser.address != null){
+            addressToShow = selectedUser.address;
+            message = "해당 좌표는 도로명 주소가 존재하지 않습니다.\n\n" + addressToShow;
+        } else {
+            Toast.makeText(getActivity(), "해당 좌표는 주소로 변환하지 못했습니다", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (getActivity() != null) {
+            new AlertDialog.Builder(getActivity())
+                    .setTitle(selectedUser.name + " 주소 복사")
+                    .setMessage(message)
+                    .setPositiveButton("복사", (dialog, which) -> {
+                        if (getContext() != null) {
+                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+                            android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text", addressToShow);
+                            clipboard.setPrimaryClip(clip);
+                            Toast.makeText(getActivity(), "복사되었습니다", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                    .create()
+                    .show();
+        }
+    }
+
+    @Override
+    public void onDraggablePOIItemMoved(MapView mapView, MapPOIItem mapPOIItem, MapPoint mapPoint) {
+
     }
 
     @Override
@@ -196,39 +226,120 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             } else {
                 setOffCurrentLocation();
             }
+        } else if (buttonView.getId() == R.id.friend_location_button) {
+            if (isChecked) {
+                setOnFriendLocation();
+            } else {
+                setOffFriendLocation();
+            }
         }
     }
 
     @Override
-    public void onClick(View view) {
-        if (view.getId() == R.id.show_friend) {
-            clickShowFriendButton();
+    public void onClick(View v) {
+        if (v.getId() == R.id.friend_search_button) {
+            showFriendSearchDialog();
         }
     }
 
-    @Override
-    public void onReverseGeoCoderFoundAddress(MapReverseGeoCoder mapReverseGeoCoder, String s) {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            Map<String, Object> mapPoint = new HashMap<>();
-            mapPoint.put("roadNameAddress", s);
+    private void showFriendSearchDialog() {
+        if (getActivity() != null) {
+            AlertDialog searchDialog = new AlertDialog.Builder(getActivity())
+                    .setView(R.layout.partial_edittext_in_dialog)
+                    .setTitle("친구 검색")
+                    .setPositiveButton("검색", null)
+                    .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
+                    .create();
 
-            FirebaseFirestore.getInstance().collection("users")
-                    .document(currentUser.getUid())
-                    .update(mapPoint)
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(getActivity(), "현재 위치 도로명 주소 업데이트 실패", Toast.LENGTH_SHORT).show();
+            searchDialog.setOnShowListener(dialog -> {
+                ((AlertDialog)dialog).getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> searchFriend(dialog));
+            });
+
+            searchDialog.show();
+
+            EditText editText = searchDialog.findViewById(R.id.partial_edit_text);
+            if (editText != null) {
+                editText.setHint("검색할 친구의 이름을 입력하세요");
+            }
+        }
+    }
+
+    private void searchFriend(DialogInterface dialog) {
+        EditText editText = ((AlertDialog)dialog).findViewById(R.id.partial_edit_text);
+        if (editText != null) {
+            if (editText.getText() == null || editText.getText().toString().equals("")) {
+                Toast.makeText(getContext(), "이름을 입력하세요", Toast.LENGTH_SHORT).show();
+            } else {
+                String friendName = editText.getText().toString();
+                MapPOIItem[] itemArray = mapView.findPOIItemByName(friendName);
+                if (itemArray != null && itemArray.length > 0) {
+                    mapView.selectPOIItem(itemArray[0], false);
+                    focusOnTarget(itemArray[0]);
+                } else {
+                    Toast.makeText(getContext(), "검색 결과 없음", Toast.LENGTH_SHORT).show();
+                }
+                dialog.dismiss();
+            }
+        }
+    }
+
+    /**
+     * 해당 마커의 위치를 지도 중심점으로 설정하고 최대로 Zoom In
+     * @param mapPOIItem
+     */
+    private void focusOnTarget(MapPOIItem mapPOIItem) {
+        mapView.setMapCenterPoint(mapPOIItem.getMapPoint(), false);
+        mapView.setZoomLevel(1, true);
+    }
+
+    private void initRetrofit() {
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(getString(R.string.kakao_local_api_base_url))
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        kaKaoLocalAPI = retrofit.create(KaKaoLocalAPI.class);
+    }
+
+    private void callCoord2Address(Double x, Double y) {
+        callAddress = kaKaoLocalAPI.coord2address(x, y);
+        callAddress.enqueue(new Callback<KakaoCoord2AddressResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<KakaoCoord2AddressResponse> call, @NonNull Response<KakaoCoord2AddressResponse> response) {
+                KakaoCoord2AddressResponse result = response.body();
+                if (result != null && result.getMeta().getTotalCount() == 1) {
+
+                    Map<String, Object> mapPoint = new HashMap<>();
+
+                    Address address = result.getDocuments().get(0).getAddress();
+                    if (address != null && address.getAddressName() != null) {
+                        mapPoint.put("address", address.getAddressName());
+                    }
+
+                    RoadAddress roadAddress = result.getDocuments().get(0).getRoadAddress();
+                    if (roadAddress != null && roadAddress.getAddressName() != null) {
+                        mapPoint.put("roadAddress", roadAddress.getAddressName());
+                    }
+
+                    if (mapPoint.size() > 0) {
+                        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+                        if (currentUser != null) {
+                            FirebaseFirestore.getInstance().collection("users")
+                                    .document(currentUser.getUid())
+                                    .update(mapPoint)
+                                    .addOnFailureListener(e -> Toast.makeText(getActivity(), "현재 위치 주소 업데이트 실패", Toast.LENGTH_SHORT).show());
                         }
-                    });
+                    } else {
+                        Toast.makeText(getActivity(), "현재 좌표 주소 변환 실패", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
 
-        }
-    }
-
-    @Override
-    public void onReverseGeoCoderFailedToFindAddress(MapReverseGeoCoder mapReverseGeoCoder) {
-
+            @Override
+            public void onFailure(@NonNull Call<KakaoCoord2AddressResponse> call, @NonNull Throwable t) {
+                Toast.makeText(getActivity(), t.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void setOnCurrentLocation() {
@@ -245,15 +356,15 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         mapView.setCurrentLocationTrackingMode(MapView.CurrentLocationTrackingMode.TrackingModeOff);
     }
 
-    private void clickShowFriendButton() {
+    private void setOnFriendLocation() {
         FirebaseFirestore.getInstance()
                 .collection("users")
                 .get()
                 .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                     @Override
                     public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        ArrayList<User> userArrayList = (ArrayList<User>) queryDocumentSnapshots.toObjects(User.class);
-                        showFriendsLocation(userArrayList);
+                        ArrayList<User> allUserArrayList = (ArrayList<User>) queryDocumentSnapshots.toObjects(User.class);
+                        showFriendsLocation(allUserArrayList);
                         currentMyLocButton.setChecked(false);
 
                     }
@@ -266,10 +377,12 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                 });
     }
 
+    private void setOffFriendLocation() {
+        mapView.removeAllPOIItems();
+        friendSearchButton.setVisibility(View.INVISIBLE);
+    }
+
     private void updateMyLocationInfo(MapPoint.GeoCoordinate mapPointGeo, float accuracyInMeters) {
-
-
-
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             Map<String, Object> mapPoint = new HashMap<>();
@@ -328,21 +441,19 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         }
     }
 
-    private void createFriendMarker(MapView mapView, String userName, MapPoint userPoint) {
+    private void createFriendMarker(User user, MapPoint mapPoint) {
         MapPOIItem friendMarker = new MapPOIItem();
-        friendMarker.setItemName(userName);
-        friendMarker.setTag(0);
-        friendMarker.setMapPoint(userPoint);
+        friendMarker.setItemName(user.name);
+        friendMarker.setUserObject(user);
+        friendMarker.setMapPoint(mapPoint);
         friendMarker.setMarkerType(MapPOIItem.MarkerType.RedPin);
         friendMarker.setSelectedMarkerType(MapPOIItem.MarkerType.YellowPin);
 
         mapView.addPOIItem(friendMarker);
-        //mapView.selectPOIItem(friendMarker, true);
-        //mapView.setMapCenterPoint(userPoint, false);
     }
 
-    private void showFriendsLocation(ArrayList<User> userArrayList) {
-        for (User user : userArrayList) {
+    private void showFriendsLocation(ArrayList<User> allUserArrayList) {
+        for (User user : allUserArrayList) {
             if (user.uid.equals(myUid)) {
                 myInfo = user;
                 break;
@@ -351,17 +462,18 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
 
         friendPointList.clear();
         for (String friendId : myInfo.friendArray) {
-            for (User user : userArrayList) {
+            for (User user : allUserArrayList) {
                 if (user.uid.equals(friendId)) {
-                    MapPoint friendPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
-                    friendPointList.add(friendPoint);
-                    createFriendMarker(mapView, user.name, friendPoint);
+                    MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
+                    friendPointList.add(mapPoint);
+                    createFriendMarker(user, mapPoint);
                     break;
                 }
             }
         }
 
         showAll();
+        friendSearchButton.setVisibility(View.VISIBLE);
     }
 
     private void showAll() {
@@ -370,7 +482,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         float maxZoomLevel = 10;
 
         MapPoint myMapPoint = MapPoint.mapPointWithGeoCoord(myInfo.latitude, myInfo.longitude);
-        //mapView.setMapCenterPoint(myMapPoint, false);
+        mapView.setMapCenterPoint(myMapPoint, false);
 
         MapPoint[] friendPointArray = new MapPoint[friendPointList.size()];
         friendPointList.toArray(friendPointArray);
@@ -393,33 +505,11 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                 } catch (NoSuchAlgorithmException e) {
                     e.printStackTrace();
                 }
-
             }
 
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
         return null;
-    }
-
-    @Override
-    public void onPOIItemSelected(MapView mapView, MapPOIItem mapPOIItem) {
-        mapView.setMapCenterPoint(mapPOIItem.getMapPoint(), false);
-        mapView.setZoomLevel(1, true);
-    }
-
-    @Override
-    public void onCalloutBalloonOfPOIItemTouched(MapView mapView, MapPOIItem mapPOIItem) {
-
-    }
-
-    @Override
-    public void onCalloutBalloonOfPOIItemTouched(MapView mapView, MapPOIItem mapPOIItem, MapPOIItem.CalloutBalloonButtonType calloutBalloonButtonType) {
-
-    }
-
-    @Override
-    public void onDraggablePOIItemMoved(MapView mapView, MapPOIItem mapPOIItem, MapPoint mapPoint) {
-
     }
 }
