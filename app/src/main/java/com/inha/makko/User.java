@@ -15,5 +15,6 @@ public class User implements Serializable {
     public Integer accuracyInMeters;
     public String address;
     public String roadAddress;
+    public Long lastUpdateAt;
     public ArrayList<String> friendArray;
 }

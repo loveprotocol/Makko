@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_item_goods"
+    android:layout_width="match_parent"
+    android:layout_height="93dp"
+    android:paddingStart="24dp"
+    android:paddingEnd="24dp">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/image_view_friend"
+        android:layout_width="66dp"
+        android:layout_height="66dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:srcCompat="@tools:sample/avatars[2]" />
+
+    <TextView
+        android:id="@+id/text_view_friend_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toTopOf="@id/text_view_address"
+        app:layout_constraintStart_toEndOf="@id/image_view_friend"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.73"
+        tools:text="박인하" />
+
+    <TextView
+        android:id="@+id/text_view_address"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/colorBlackAlpha70"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@id/text_view_last_update_at"
+        app:layout_constraintStart_toEndOf="@id/image_view_friend"
+        app:layout_constraintTop_toBottomOf="@id/text_view_friend_name"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.73"
+        tools:text="인천 남구 학익동" />
+
+    <TextView
+        android:id="@+id/text_view_last_update_at"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/colorBlackAlpha70"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/image_view_friend"
+        app:layout_constraintTop_toBottomOf="@id/text_view_address"
+        app:layout_constraintWidth_default="percent"
+        app:layout_constraintWidth_percent="0.73"
+        tools:text="2020-06-02 13:38" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

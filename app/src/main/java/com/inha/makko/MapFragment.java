@@ -37,6 +37,8 @@ import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapPointBounds;
 import net.daum.mf.map.api.MapView;
 
+import org.joda.time.DateTimeUtils;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -389,6 +391,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             mapPoint.put("latitude", mapPointGeo.latitude);
             mapPoint.put("longitude", mapPointGeo.longitude);
             mapPoint.put("accuracyInMeters", accuracyInMeters);
+            mapPoint.put("lastUpdateAt", DateTimeUtils.currentTimeMillis());
 
             FirebaseFirestore.getInstance().collection("users")
                     .document(currentUser.getUid())
