@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_recycler_view_empty_cl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="visible">
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/layout_recycler_view_empty_img_match"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/layout_recycler_view_empty_tv_match"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:srcCompat="@drawable/ic_launcher" />
+
+    <TextView
+        android:id="@+id/layout_recycler_view_empty_tv_match"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textAlignment="center"
+        android:textColor="@android:color/black"
+        android:textSize="14sp"
+        app:layout_constraintTop_toBottomOf="@id/layout_recycler_view_empty_img_match"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:text="recycler_view에 보여줄 아이템이 없거나\n 오류 발생 시 사용하는 Empty layout" />
+
+    <!--Button
+        android:id="@+id/layout_recycler_view_affiliate_move"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_recycler_view_empty_tv_match"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:stateListAnimator="@null"
+        android:elevation="4dp"
+        android:layout_marginTop="16dp"
+        android:text="@string/fragment_main_home_affiliate_move"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:gravity="center_vertical"
+        android:paddingStart="12dp"
+        android:paddingEnd="16dp"
+        android:background="@drawable/drawable_rounded_rectangle"
+        android:drawablePadding="8dp"
+        android:drawableStart="@drawable/ic_affiliate_lightning" /-->
+
+</androidx.constraintlayout.widget.ConstraintLayout>

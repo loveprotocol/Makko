@@ -7,6 +7,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.DividerItemDecoration;
@@ -20,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -47,6 +49,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView friendRecyclerView;
+    private ConstraintLayout emptyLayout;
     private FriendRecyclerViewAdapter friendRecyclerViewAdapter = null;
     private FloatingActionButton friendAddBtn;
     private User myInfo = null;
@@ -81,6 +84,9 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
 
         swipeRefreshLayout = view.findViewById(R.id.fragment_friends_swipe_refresh_layout);
         friendRecyclerView = view.findViewById(R.id.fragment_friends_recycler_view);
+        emptyLayout = view.findViewById(R.id.fragment_friends_emptyView);
+        TextView emptyTextView = emptyLayout.findViewById(R.id.layout_recycler_view_empty_tv_match);
+        emptyTextView.setText("현재 등록된 친구가 없습니다");
         friendAddBtn = view.findViewById(R.id.fragment_friends_floating_btn);
         friendAddBtn.setOnClickListener(this);
 
@@ -126,7 +132,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                                 }
                             }
 
-                            if (myInfo != null) {
+                            if (myInfo != null && myInfo.friendArray != null) {
                                 for (String friendId : myInfo.friendArray) {
                                     for (User user : allUserArrayList) {
                                         if (user.uid.equals(friendId)) {
@@ -142,6 +148,13 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                             } else {
                                 updateRecyclerView(friendArrayList);
                             }
+
+                            if (friendArrayList.size() == 0) {
+                                showEmptyLayout();
+                            } else {
+                                showRecyclerView();
+                            }
+
                         }
                         swipeRefreshLayout.setRefreshing(false);
                     }
@@ -165,6 +178,16 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
 
     private void updateRecyclerView(ArrayList<User> friendArrayList) {
         friendRecyclerViewAdapter.refreshList(friendArrayList);
+    }
+
+    private void showEmptyLayout() {
+        emptyLayout.setVisibility(View.VISIBLE);
+        friendRecyclerView.setVisibility(View.INVISIBLE);
+    }
+
+    private void showRecyclerView() {
+        emptyLayout.setVisibility(View.INVISIBLE);
+        friendRecyclerView.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -224,38 +247,55 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                                     }
                                     Toast.makeText(getContext(), "검색 결과 없음", Toast.LENGTH_SHORT).show();
                                 } else {
-                                    for (User user : userArrayList) {
-                                        friendRecyclerViewAdapter.addItem(user);
-                                        myInfo.friendArray.add(user.uid);
+                                    boolean newFriend = false;
+                                    if (myInfo.friendArray == null) {
+                                        myInfo.friendArray = new ArrayList<>();
                                     }
 
-                                    Map<String, Object> friendMap = new HashMap<>();
-                                    friendMap.put("friendArray", myInfo.friendArray);
+                                    for (User user : userArrayList) {
+                                        if (!myInfo.friendArray.contains(user.uid)) {
+                                            friendRecyclerViewAdapter.addItem(user);
+                                            showRecyclerView();
+                                            myInfo.friendArray.add(user.uid);
+                                            newFriend = true;
+                                        } else {
+                                            Toast.makeText(getContext(), "이미 존재하는 친구입니다", Toast.LENGTH_SHORT).show();
+                                            if (loadingBar != null) {
+                                                loadingBar.setVisibility(View.INVISIBLE);
+                                            }
+                                            dialog.dismiss();
+                                        }
+                                    }
 
-                                    FirebaseFirestore.getInstance()
-                                            .collection("users")
-                                            .document(myInfo.uid)
-                                            .update(friendMap)
-                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void aVoid) {
-                                                    if (loadingBar != null) {
-                                                        loadingBar.setVisibility(View.INVISIBLE);
+                                    if (newFriend) {
+                                        Map<String, Object> friendMap = new HashMap<>();
+                                        friendMap.put("friendArray", myInfo.friendArray);
+
+                                        FirebaseFirestore.getInstance()
+                                                .collection("users")
+                                                .document(myInfo.uid)
+                                                .update(friendMap)
+                                                .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                    @Override
+                                                    public void onSuccess(Void aVoid) {
+                                                        if (loadingBar != null) {
+                                                            loadingBar.setVisibility(View.INVISIBLE);
+                                                        }
+                                                        Toast.makeText(getContext(), "친구 추가 완료", Toast.LENGTH_SHORT).show();
+                                                        dialog.dismiss();
                                                     }
-                                                    Toast.makeText(getContext(), "친구 추가 완료", Toast.LENGTH_SHORT).show();
-                                                    dialog.dismiss();
-                                                }
-                                            })
-                                            .addOnFailureListener(new OnFailureListener() {
-                                                @Override
-                                                public void onFailure(@NonNull Exception e) {
-                                                    if (loadingBar != null) {
-                                                        loadingBar.setVisibility(View.INVISIBLE);
+                                                })
+                                                .addOnFailureListener(new OnFailureListener() {
+                                                    @Override
+                                                    public void onFailure(@NonNull Exception e) {
+                                                        if (loadingBar != null) {
+                                                            loadingBar.setVisibility(View.INVISIBLE);
+                                                        }
+                                                        Toast.makeText(getContext(), "친구 추가 실패", Toast.LENGTH_SHORT).show();
+                                                        dialog.dismiss();
                                                     }
-                                                    Toast.makeText(getContext(), "친구 추가 실패", Toast.LENGTH_SHORT).show();
-                                                    dialog.dismiss();
-                                                }
-                                            });
+                                                });
+                                    }
                                 }
                             }
                         })

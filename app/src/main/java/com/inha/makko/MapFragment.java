@@ -464,19 +464,33 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         }
 
         friendPointList.clear();
-        for (String friendId : myInfo.friendArray) {
-            for (User user : allUserArrayList) {
-                if (user.uid.equals(friendId)) {
-                    MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
-                    friendPointList.add(mapPoint);
-                    createFriendMarker(user, mapPoint);
-                    break;
+        if (myInfo.friendArray != null) {
+            for (String friendId : myInfo.friendArray) {
+                for (User user : allUserArrayList) {
+                    if (user.uid.equals(friendId)) {
+                        MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
+                        friendPointList.add(mapPoint);
+                        createFriendMarker(user, mapPoint);
+                        break;
+                    }
                 }
             }
-        }
 
-        showAll();
-        friendSearchButton.setVisibility(View.VISIBLE);
+            if (friendPointList.size() == 0) {
+                Toast.makeText(getContext(), "현재 등록된 친구가 없습니다", Toast.LENGTH_SHORT).show();
+                friendLocButton.setOnCheckedChangeListener(null);
+                friendLocButton.setChecked(false);
+                friendLocButton.setOnCheckedChangeListener(this);
+            } else {
+                showAll();
+                friendSearchButton.setVisibility(View.VISIBLE);
+            }
+        } else {
+            Toast.makeText(getContext(), "현재 등록된 친구가 없습니다", Toast.LENGTH_SHORT).show();
+            friendLocButton.setOnCheckedChangeListener(null);
+            friendLocButton.setChecked(false);
+            friendLocButton.setOnCheckedChangeListener(this);
+        }
     }
 
     private void showAll() {
