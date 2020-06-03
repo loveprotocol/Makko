@@ -75,7 +75,7 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
             friendViewHolder.friendAddress.setText("친구 주소 얻기 실패");
         }
         if (friendsList.get(position).lastUpdateAt != null) {
-            String lastUpdateAt = new DateTime(friendsList.get(position).lastUpdateAt).toString("yyyy-MM-dd hh:mm:ss");
+            String lastUpdateAt = new DateTime(friendsList.get(position).lastUpdateAt).toString("yyyy-MM-dd HH:mm:ss");
             friendViewHolder.lastUpdateAt.setText(lastUpdateAt);
         }
 
