@@ -186,10 +186,10 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         String addressToShow;
 
         // 도로명 주소 우선
-        if (selectedUser.roadAddress != null) {
+        if (selectedUser.roadAddress != null && selectedUser.roadAddress.length() != 0) {
             addressToShow = selectedUser.roadAddress;
             message = addressToShow;
-        } else if (selectedUser.address != null){
+        } else if (selectedUser.address != null && selectedUser.address.length() != 0){
             addressToShow = selectedUser.address;
             message = "해당 좌표는 도로명 주소가 존재하지 않습니다.\n\n" + addressToShow;
         } else {
@@ -316,11 +316,15 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                     Address address = result.getDocuments().get(0).getAddress();
                     if (address != null && address.getAddressName() != null) {
                         mapPoint.put("address", address.getAddressName());
+                    } else {
+                        mapPoint.put("address", "");
                     }
 
                     RoadAddress roadAddress = result.getDocuments().get(0).getRoadAddress();
                     if (roadAddress != null && roadAddress.getAddressName() != null) {
                         mapPoint.put("roadAddress", roadAddress.getAddressName());
+                    } else {
+                        mapPoint.put("roadAddress", "");
                     }
 
                     if (mapPoint.size() > 0) {

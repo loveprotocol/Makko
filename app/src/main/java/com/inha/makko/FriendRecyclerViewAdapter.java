@@ -67,9 +67,9 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         FriendViewHolder friendViewHolder = (FriendViewHolder)holder;
         friendViewHolder.friendAvatar.setImageResource(avatarResourceIdList[randomIndex]);
         friendViewHolder.friendName.setText(friendsList.get(position).name);
-        if (friendsList.get(position).roadAddress != null) {
+        if (friendsList.get(position).roadAddress != null && friendsList.get(position).roadAddress.length() != 0) {
             friendViewHolder.friendAddress.setText(friendsList.get(position).roadAddress);
-        } else if (friendsList.get(position).address != null) {
+        } else if (friendsList.get(position).address != null && friendsList.get(position).address.length() != 0) {
             friendViewHolder.friendAddress.setText(friendsList.get(position).address);
         } else {
             friendViewHolder.friendAddress.setText("친구 주소 얻기 실패");
