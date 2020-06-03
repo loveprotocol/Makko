@@ -167,11 +167,11 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                 });
     }
 
-    private void initializeRecyclerView(ArrayList<User> allUserArrayList) {
+    private void initializeRecyclerView(ArrayList<User> friendList) {
         if (getActivity() != null) {
             friendRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
             friendRecyclerView.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-            friendRecyclerViewAdapter = new FriendRecyclerViewAdapter(allUserArrayList);
+            friendRecyclerViewAdapter = new FriendRecyclerViewAdapter(myInfo, friendList);
             friendRecyclerView.setAdapter(friendRecyclerViewAdapter);
         }
     }

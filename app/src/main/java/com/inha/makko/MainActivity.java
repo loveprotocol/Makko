@@ -22,9 +22,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import net.daum.mf.map.api.MapPOIItem;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,7 +120,6 @@ public class MainActivity extends AppCompatActivity {
         } else if (item.getItemId() == R.id.item_menu_rename) {
             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
             if (user != null) {
-
                 FirebaseFirestore.getInstance().collection("users")
                         .document(user.getUid())
                         .get()
@@ -175,25 +176,52 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 String newName = editText.getText().toString();
-                Map<String, Object> newNameMap = new HashMap<>();
-                newNameMap.put("name", newName);
 
                 FirebaseFirestore.getInstance()
                         .collection("users")
-                        .document(user.uid)
-                        .update(newNameMap)
-                        .addOnSuccessListener(new OnSuccessListener<Void>() {
+                        .whereEqualTo("name", newName)
+                        .get()
+                        .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
                             @Override
-                            public void onSuccess(Void aVoid) {
-                                Toast.makeText(MainActivity.this, "변경 성공", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
+                            public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
+                                ArrayList<User> sameNameList = (ArrayList<User>) queryDocumentSnapshots.toObjects(User.class);
+                                if (sameNameList.size() == 0) {
+                                    Map<String, Object> newNameMap = new HashMap<>();
+                                    newNameMap.put("name", newName);
+
+                                    FirebaseFirestore.getInstance()
+                                            .collection("users")
+                                            .document(user.uid)
+                                            .update(newNameMap)
+                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    Toast.makeText(MainActivity.this, "변경 성공", Toast.LENGTH_SHORT).show();
+                                                    dialog.dismiss();
+                                                }
+                                            })
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+                                                    Toast.makeText(MainActivity.this, "변경 실패", Toast.LENGTH_SHORT).show();
+                                                    dialog.dismiss();
+                                                }
+                                            });
+                                } else {
+                                    if (loadingBar != null) {
+                                        loadingBar.setVisibility(View.INVISIBLE);
+                                    }
+                                    Toast.makeText(MainActivity.this, "동일한 이름이 존재합니다", Toast.LENGTH_SHORT).show();
+                                }
                             }
                         })
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
+                                if (loadingBar != null) {
+                                    loadingBar.setVisibility(View.INVISIBLE);
+                                }
                                 Toast.makeText(MainActivity.this, "변경 실패", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
                             }
                         });
             }
