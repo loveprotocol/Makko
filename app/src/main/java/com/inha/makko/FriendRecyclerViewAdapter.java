@@ -27,7 +27,9 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     private Context context;
     private User myInfo;
     private ArrayList<User> friendsList;
-    private int[] avatarResourceIdList = {R.drawable.ic_afro_man_male_avatar, R.drawable.ic_boy_avatar, R.drawable.ic_girl_avatar, R.drawable.ic_woman_avatar, R.drawable.ic_hipster_beard_man};
+    private int[] avatarResourceIdList = {R.drawable.ic_afro_man_male_avatar, R.drawable.ic_boy_avatar, R.drawable.ic_girl_avatar,
+            R.drawable.ic_woman_avatar, R.drawable.ic_hipster_beard_man, R.drawable.ic_avatar_avocado, R.drawable.ic_avatar_batman,
+            R.drawable.ic_avatar_bear, R.drawable.ic_avatar_coffee_zorro, R.drawable.ic_avatar_gaonaci, R.drawable.ic_avatar_lazybones};
 
     public class FriendViewHolder extends RecyclerView.ViewHolder {
         AppCompatImageView friendAvatar;
