@@ -38,7 +38,7 @@ import androidx.viewpager.widget.ViewPager;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String[] tabTitleList = {"지도", "친구"};
+    private String[] tabTitleList = {"지도", "즐겨찾기"};
     private TabLayout mainTabLayout;
     private ViewPager mainViewPager;
     GoogleSignInClient mGoogleSignInClient;

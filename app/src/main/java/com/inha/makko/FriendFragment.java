@@ -86,7 +86,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
         friendRecyclerView = view.findViewById(R.id.fragment_friends_recycler_view);
         emptyLayout = view.findViewById(R.id.fragment_friends_emptyView);
         TextView emptyTextView = emptyLayout.findViewById(R.id.layout_recycler_view_empty_tv_match);
-        emptyTextView.setText("현재 등록된 친구가 없습니다");
+        emptyTextView.setText("현재 등록된 즐겨찾기가 없습니다");
         friendAddBtn = view.findViewById(R.id.fragment_friends_floating_btn);
         friendAddBtn.setOnClickListener(this);
 
@@ -201,7 +201,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
         if (getActivity() != null) {
             AlertDialog searchDialog = new AlertDialog.Builder(getActivity())
                     .setView(R.layout.partial_edittext_in_dialog)
-                    .setTitle("친구 등록")
+                    .setTitle("즐겨찾기 등록")
                     .setPositiveButton("등록", null)
                     .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
                     .create();
@@ -214,7 +214,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
 
             EditText editText = searchDialog.findViewById(R.id.partial_edit_text);
             if (editText != null) {
-                editText.setHint("등록할 친구의 이름을 입력하세요");
+                editText.setHint("즐겨찾기할 이름을 입력하세요");
             }
         }
     }
@@ -259,7 +259,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                                             myInfo.friendArray.add(user.uid);
                                             newFriend = true;
                                         } else {
-                                            Toast.makeText(getContext(), "이미 존재하는 친구입니다", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(getContext(), "이미 즐겨찾기에 등록된 이름입니다", Toast.LENGTH_SHORT).show();
                                             if (loadingBar != null) {
                                                 loadingBar.setVisibility(View.INVISIBLE);
                                             }
@@ -281,7 +281,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                                                         if (loadingBar != null) {
                                                             loadingBar.setVisibility(View.INVISIBLE);
                                                         }
-                                                        Toast.makeText(getContext(), "친구 추가 완료", Toast.LENGTH_SHORT).show();
+                                                        Toast.makeText(getContext(), "즐겨찾기 추가 완료", Toast.LENGTH_SHORT).show();
                                                         dialog.dismiss();
                                                     }
                                                 })
@@ -291,7 +291,7 @@ public class FriendFragment extends Fragment implements View.OnClickListener {
                                                         if (loadingBar != null) {
                                                             loadingBar.setVisibility(View.INVISIBLE);
                                                         }
-                                                        Toast.makeText(getContext(), "친구 추가 실패", Toast.LENGTH_SHORT).show();
+                                                        Toast.makeText(getContext(), "즐겨찾기 추가 실패", Toast.LENGTH_SHORT).show();
                                                         dialog.dismiss();
                                                     }
                                                 });

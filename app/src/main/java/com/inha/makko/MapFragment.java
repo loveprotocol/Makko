@@ -248,7 +248,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
         if (getActivity() != null) {
             AlertDialog searchDialog = new AlertDialog.Builder(getActivity())
                     .setView(R.layout.partial_edittext_in_dialog)
-                    .setTitle("친구 검색")
+                    .setTitle("즐겨찾기 검색")
                     .setPositiveButton("검색", null)
                     .setNegativeButton("취소", (dialog, which) -> dialog.dismiss())
                     .create();
@@ -261,7 +261,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
 
             EditText editText = searchDialog.findViewById(R.id.partial_edit_text);
             if (editText != null) {
-                editText.setHint("검색할 친구의 이름을 입력하세요");
+                editText.setHint("검색할 즐겨찾기의 이름을 입력하세요");
             }
         }
     }
@@ -481,7 +481,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             }
 
             if (friendPointList.size() == 0) {
-                Toast.makeText(getContext(), "현재 등록된 친구가 없습니다", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "현재 등록된 즐겨찾기가 없습니다", Toast.LENGTH_SHORT).show();
                 friendLocButton.setOnCheckedChangeListener(null);
                 friendLocButton.setChecked(false);
                 friendLocButton.setOnCheckedChangeListener(this);
@@ -490,7 +490,7 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
                 friendSearchButton.setVisibility(View.VISIBLE);
             }
         } else {
-            Toast.makeText(getContext(), "현재 등록된 친구가 없습니다", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "현재 등록된 즐겨찾기가 없습니다", Toast.LENGTH_SHORT).show();
             friendLocButton.setOnCheckedChangeListener(null);
             friendLocButton.setChecked(false);
             friendLocButton.setOnCheckedChangeListener(this);

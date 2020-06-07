@@ -72,7 +72,7 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         } else if (friendsList.get(position).address != null && friendsList.get(position).address.length() != 0) {
             friendViewHolder.friendAddress.setText(friendsList.get(position).address);
         } else {
-            friendViewHolder.friendAddress.setText("친구 주소 얻기 실패");
+            friendViewHolder.friendAddress.setText("즐겨찾기 주소 얻기 실패");
         }
         if (friendsList.get(position).lastUpdateAt != null) {
             String lastUpdateAt = new DateTime(friendsList.get(position).lastUpdateAt).toString("yyyy-MM-dd HH:mm:ss");
@@ -81,10 +81,10 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
 
         friendViewHolder.itemView.setOnLongClickListener(v -> {
             new AlertDialog.Builder(context)
-                    .setMessage("친구 " +  friendsList.get(position).name + "님을 삭제하시겠습니까?")
+                    .setMessage("등록된 즐겨찾기(" +  friendsList.get(position).name + ")를 삭제하시겠습니까?")
                     .setPositiveButton("삭제", (dialog, which) -> {
 
-                        // 내 정보 - 친구 리스트에서 해당 친구 삭제
+                        // 내 정보 - 즐겨찾기 리스트에서 해당 즐겨찾기 삭제
                         myInfo.friendArray.remove(friendsList.get(position).uid);
 
                         Map<String, Object> friendMap = new HashMap<>();
@@ -99,14 +99,14 @@ public class FriendRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
                                     public void onSuccess(Void aVoid) {
                                         friendsList.remove(position);
                                         notifyItemRemoved(position);
-                                        Toast.makeText(context, "친구 삭제 완료", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(context, "즐겨찾기 삭제 완료", Toast.LENGTH_SHORT).show();
                                         dialog.dismiss();
                                     }
                                 })
                                 .addOnFailureListener(new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
-                                        Toast.makeText(context, "친구 삭제 실패", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(context, "즐겨찾기 삭제 실패", Toast.LENGTH_SHORT).show();
                                         dialog.dismiss();
                                     }
                                 });
