@@ -472,9 +472,11 @@ public class MapFragment extends Fragment implements View.OnClickListener, Toggl
             for (String friendId : myInfo.friendArray) {
                 for (User user : allUserArrayList) {
                     if (user.uid.equals(friendId)) {
-                        MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
-                        friendPointList.add(mapPoint);
-                        createFriendMarker(user, mapPoint);
+                        if (user.latitude != null && user.longitude != null) {
+                            MapPoint mapPoint = MapPoint.mapPointWithGeoCoord(user.latitude, user.longitude);
+                            friendPointList.add(mapPoint);
+                            createFriendMarker(user, mapPoint);
+                        }
                         break;
                     }
                 }
